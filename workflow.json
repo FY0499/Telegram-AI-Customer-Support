@@ -1,0 +1,213 @@
+{
+  "name": "16 - بوت دعم عملاء ذكي (Telegram AI Agent)",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "id": "e5e0b53a-ba2f-4612-8baa-5881e350e8dc",
+      "name": "Telegram Trigger - رسالة عميل",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1216,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message.text }}",
+        "options": {
+          "systemMessage": "أنت مساعد دعم عملاء ودود. أجب عن استفسارات العملاء بخصوص المنتجات والطلبات والشحن.\n\nإذا كان السؤال معقد جداً أو يتعلق باسترجاع أموال أو طلب العميل صراحة التحدث مع شخص/موظف/دعم بشري، يجب عليك:\n1. إخبار العميل أنك ستحوله لموظف بشري، بأي صياغة مناسبة تختارها.\n2. أن تضيف في نهاية ردك تماماً السطر التالي دون أي تغيير: [[ESCALATE]]\n\nلا تذكر هذا الرمز أو تشرحه للعميل إطلاقاً، فقط أضفه في آخر سطر من ردك عند الحاجة للتحويل. لا تضفه إذا لم يكن التحويل مطلوباً."
+        }
+      },
+      "id": "7edf30de-8c96-4bae-82e7-b6f6d30dc0bc",
+      "name": "AI Agent - الرد على العميل",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        -992,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemma-4-31b-it",
+        "options": {}
+      },
+      "id": "e486919d-ee21-411b-a86d-76b6e4e5725d",
+      "name": "Google Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -984,
+        680
+      ]
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.message.chat.id }}",
+        "contextWindowLength": 10
+      },
+      "id": "c2ae5eca-4b04-4863-8356-cc79d202cd2b",
+      "name": "Memory - سجل المحادثة",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -856,
+        680
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.output }}",
+              "rightValue": "[[ESCALATE]]",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              },
+              "id": "beaaabcd-91dd-473f-b1a9-8ea6a80a0a2e"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a3601786-beed-46b4-bdc9-136636222d1d",
+      "name": "If - تصعيد لموظف؟",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -640,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger - رسالة عميل').item.json.message.chat.id }}",
+        "text": "={{ $json.output.replace('[[ESCALATE]]', '').trim() }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "609dc3b0-d240-4565-b813-d930e6498e43",
+      "name": "Telegram - إرسال الرد",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -416,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "1120179307",
+        "text": "=🆘 عميل يحتاج تدخل بشري\n\nمن: {{ $('Telegram Trigger - رسالة عميل').item.json.message.from.first_name }}\nالرسالة: {{ $('Telegram Trigger - رسالة عميل').item.json.message.text }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "ec45ff6c-6cf2-4941-8440-e750617070db",
+      "name": "Telegram - تنبيه فريق الدعم",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -416,
+        544
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger - رسالة عميل": {
+      "main": [
+        [
+          {
+            "node": "AI Agent - الرد على العميل",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent - الرد على العميل",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory - سجل المحادثة": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent - الرد على العميل",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent - الرد على العميل": {
+      "main": [
+        [
+          {
+            "node": "If - تصعيد لموظف؟",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If - تصعيد لموظف؟": {
+      "main": [
+        [
+          {
+            "node": "Telegram - تنبيه فريق الدعم",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Telegram - إرسال الرد",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Telegram - إرسال الرد",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "meta": {},
+  "nodeGroups": [],
+  "tags": []
+}
