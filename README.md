@@ -1,5 +1,7 @@
 # Telegram AI Customer Support Agent
 
+I built and tested this workflow from start to finish.
+
 An AI customer support assistant built with n8n and Telegram. It responds to customer messages, keeps track of the conversation, and alerts the support team when a request needs human attention.
 
 <img width="537" height="217" alt="Telegram Customer Support demo" src="https://github.com/user-attachments/assets/88493c94-dc71-45ba-bc76-83ae16e63d54" />
