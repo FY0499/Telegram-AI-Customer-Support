@@ -115,7 +115,7 @@
     },
     {
       "parameters": {
-        "chatId": "1120179307",
+        "chatId": "YOUR_SUPPORT_TEAM_TELEGRAM_CHAT_ID",
         "text": "=🆘 عميل يحتاج تدخل بشري\n\nمن: {{ $('Telegram Trigger - رسالة عميل').item.json.message.from.first_name }}\nالرسالة: {{ $('Telegram Trigger - رسالة عميل').item.json.message.text }}",
         "additionalFields": {
           "appendAttribution": false
